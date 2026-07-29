@@ -1,0 +1,59 @@
+[project]
+name = "afterwit"
+version = "0.1.0"
+description = "afterwit — distilled knowledge system for Claude Code + Codex"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Abu Huraira" }]
+keywords = ["claude-code", "codex", "knowledge-base", "mcp", "llm", "memory"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = [
+    "fastembed>=0.6",
+    # <2: mcp 2.0.0 removed Server.list_tools/call_tool decorators; every dev venv
+    # sat safely on 1.28.x while the PUBLIC repo's freshly-resolved lock shipped
+    # 2.0.0 and broke on clone (Gotcha #85). Lift only with a ported mcp_server.
+    "mcp>=1.28.1,<2",
+    "pyyaml>=6",
+]
+
+[project.urls]
+Homepage = "https://github.com/ahuraira/afterwit"
+Repository = "https://github.com/ahuraira/afterwit"
+Issues = "https://github.com/ahuraira/afterwit/issues"
+
+[project.scripts]
+afterwit = "afterwit.cli:main"
+aw = "afterwit.cli:main"  # short alias
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/afterwit"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff", "mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+# Declare the rule SET, not a ruff version. These four were ruff's defaults up to
+# 0.15; 0.16.0 widened them to ~20 families and turned every CI leg red — 108
+# findings, on a tree nobody had touched — including BLE001 against the fail-soft
+# `except Exception` handlers CLAUDE.md requires and RUF100 against `noqa`s an
+# older ruff demanded. An unconfigured linter's rule set is the vendor's changing
+# opinion, delivered on their release schedule. Widen this deliberately, in a
+# commit that also fixes what it finds.
+select = ["E4", "E7", "E9", "F"]

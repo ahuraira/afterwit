@@ -1,0 +1,47 @@
+# Golden retrieval set — SPEC §12. Gates: recall@3 ≥ 0.7, no-answer precision ≥ 0.9.
+#
+# The no-answer traps below are universal: they must return NOTHING on any index,
+# and they work before you have distilled a single card. Run them today.
+#
+# `hit` queries cannot be shipped. A hit pins a query to a card that exists only in
+# YOUR wiki, so a published set would either be empty or be somebody else's memory.
+# LoCoMo-style public benchmarks are banned (ADR-007) — a benchmark built from
+# invented conversations measures nothing about your history. Add your own hits as
+# you distill, following the commented shape at the bottom; aim for ~30.
+#
+# Query kinds:
+#   hit       — must return a specific card in top-3 (match on expected_title_contains,
+#               and pin expected_id once you know the card's id)
+#   no_answer — must return NOTHING above the floor (Manifesto P3: silence beats noise)
+
+queries:
+  # --- no-answer traps (valid on an empty index; keep these) ---
+  - kind: no_answer
+    query: "write a haiku about kubernetes ingress controllers"
+  - kind: no_answer
+    query: "what is the capital of france"
+  - kind: no_answer
+    query: "yes"
+  - kind: no_answer
+    query: "please continue with the previous approach"
+  - kind: no_answer
+    query: "rename this variable to something clearer"
+  # distractor trap: topically adjacent to plausible cards, asking something never discussed
+  - kind: no_answer
+    query: "configure oracle rac cluster failover for the audit database"
+  # capability no-answer traps (SPEC §7a.4): things you never built — reinvention
+  # prevention is only real if absence is answered honestly too
+  - kind: no_answer
+    query: "kafka consumer group rebalancing handler"
+  - kind: no_answer
+    query: "paddle webhook signature verification retry handler"
+
+  # --- your hit queries go here ---
+  # Take them from questions you actually asked, not questions you can imagine asking.
+  # `afterwit recall "<query>" -v` prints the card id to pin.
+  #
+  # - kind: hit
+  #   query: "confidence cap distiller queue"
+  #   project: afterwit
+  #   expected_title_contains: "AGENT_CONFIDENCE_CAP"
+  #   expected_id: 01ABCDEFGHIJKLMNOPQRSTUVWX

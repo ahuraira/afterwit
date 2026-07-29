@@ -1,0 +1,1735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>afterwit</title>
+<style>
+/* ---------------------------------------------------------------- tokens */
+:root {
+  color-scheme: light;
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f1f1f3;
+  --surface-3: #e9e9ec;
+  --border: #e2e2e6;
+  --border-2: #ececef;
+  --ink: #1b1b1f;
+  --ink-2: #5c5c66;
+  --ink-3: #9c9ca6;
+  --accent: #3b5bdb;
+  --accent-soft: rgba(59, 91, 219, .10);
+  --accent-ink: #ffffff;
+  --danger: #b6423a;
+  --ok: #1d7a4d;
+  --warn: #9a6700;
+  --c-decision:   #2b62c9;
+  --c-error_fix:  #bf4038;
+  --c-gotcha:     #9a6700;
+  --c-preference: #1d7a4d;
+  --c-fact:       #68707d;
+  --c-snippet:    #0e766e;
+  --c-capability: #7050ab;
+  --shadow-1: 0 1px 2px rgba(20,20,25,.05);
+  --shadow-2: 0 1px 2px rgba(20,20,25,.05), 0 8px 24px -12px rgba(20,20,25,.14);
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  --ease: cubic-bezier(.2, .7, .1, 1);
+}
+[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101013;
+    --surface: #17171b;
+    --surface-2: #1e1e23;
+    --surface-3: #26262c;
+    --border: #29292f;
+    --border-2: #222227;
+    --ink: #ededf0;
+    --ink-2: #a5a5af;
+    --ink-3: #66666f;
+    --accent: #7b93f2;
+    --accent-soft: rgba(123, 147, 242, .13);
+    --accent-ink: #0f1220;
+    --danger: #e07a72;
+    --ok: #58b98a;
+    --warn: #d9a441;
+    --c-decision:   #7ba0ee;
+    --c-error_fix:  #e08079;
+    --c-gotcha:     #d4a94e;
+    --c-preference: #63bd8f;
+    --c-fact:       #9aa4b2;
+    --c-snippet:    #55b3ac;
+    --c-capability: #ab90e0;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-2: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -12px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101013;
+  --surface: #17171b;
+  --surface-2: #1e1e23;
+  --surface-3: #26262c;
+  --border: #29292f;
+  --border-2: #222227;
+  --ink: #ededf0;
+  --ink-2: #a5a5af;
+  --ink-3: #66666f;
+  --accent: #7b93f2;
+  --accent-soft: rgba(123, 147, 242, .13);
+  --accent-ink: #0f1220;
+  --danger: #e07a72;
+  --ok: #58b98a;
+  --warn: #d9a441;
+  --c-decision:   #7ba0ee;
+  --c-error_fix:  #e08079;
+  --c-gotcha:     #d4a94e;
+  --c-preference: #63bd8f;
+  --c-fact:       #9aa4b2;
+  --c-snippet:    #55b3ac;
+  --c-capability: #ab90e0;
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -12px rgba(0,0,0,.5);
+}
+
+/* ---------------------------------------------------------------- base */
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 400 14px/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  display: flex; flex-direction: column;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+::selection { background: var(--accent-soft); }
+kbd {
+  font: 11px var(--mono); color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-bottom-width: 2px; border-radius: 4px; padding: 0 5px;
+  vertical-align: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------- topbar */
+.topbar {
+  display: flex; align-items: center; gap: 20px;
+  height: 52px; padding: 0 20px; flex: none;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+}
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; }
+.brand svg { display: block; color: var(--accent); }
+.brand .muted { color: var(--ink-3); font-weight: 400; }
+.topbar nav { display: flex; gap: 2px; height: 100%; }
+.tab {
+  position: relative; display: flex; align-items: center; gap: 7px;
+  padding: 0 13px; background: none; border: none; cursor: pointer;
+  color: var(--ink-2); font-weight: 500;
+  transition: color .15s var(--ease);
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); }
+.tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px;
+  height: 2px; background: var(--accent); border-radius: 2px 2px 0 0;
+}
+.tab .pill {
+  font: 600 11px/1 var(--mono); color: var(--accent);
+  background: var(--accent-soft); border-radius: 999px; padding: 4px 7px;
+  font-variant-numeric: tabular-nums;
+}
+.tab .pill:empty { display: none; }
+.top-actions { margin-left: auto; display: flex; gap: 6px; }
+.iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 7px; border: none;
+  background: none; color: var(--ink-2); cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.iconbtn:hover { background: var(--surface-2); color: var(--ink); }
+.iconbtn:active { transform: scale(.96); }
+.iconbtn svg { display: block; }
+[data-theme] .only-light, .only-dark { display: none; }
+:root[data-theme="dark"] .only-dark { display: block; }
+:root[data-theme="dark"] .only-light { display: none; }
+:root[data-theme="light"] .only-light { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .only-dark { display: block; }
+  :root:not([data-theme]) .only-light { display: none; }
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .only-light { display: block; }
+  :root:not([data-theme]) .only-dark { display: none; }
+}
+
+/* ---------------------------------------------------------------- layout */
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.surface-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.surface-wrap[hidden] { display: none; }
+.page {
+  width: 100%; max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px;
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------- shared bits */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 600 10.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .07em;
+  padding: 4px 8px; border-radius: 5px;
+  color: var(--tc, var(--ink-2));
+  background: color-mix(in srgb, var(--tc, var(--ink-2)) 11%, transparent);
+}
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--tc, var(--ink-3)); }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font: 500 11.5px/1 var(--sans); padding: 4px 8px; border-radius: 5px;
+  color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--border-2);
+}
+.chip.warn  { color: var(--warn);   background: color-mix(in srgb, var(--warn) 10%, transparent);   border-color: transparent; }
+.chip.ok    { color: var(--ok);     background: color-mix(in srgb, var(--ok) 10%, transparent);     border-color: transparent; }
+.chip.bad   { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); border-color: transparent; }
+.mono { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface); color: var(--ink);
+  padding: 7px 13px; font-weight: 500; cursor: pointer;
+  transition: background .15s var(--ease), border-color .15s var(--ease), transform .1s var(--ease);
+}
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .5; cursor: default; transform: none; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.07); }
+.btn.danger:hover:not(:disabled) { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); }
+.btn kbd { margin-left: 2px; }
+
+input[type="text"], input[type="search"], input[type="number"], textarea, select {
+  width: 100%; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface); color: var(--ink);
+  font: 14px/1.5 var(--sans); padding: 8px 11px;
+  transition: border-color .15s var(--ease);
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+textarea { font-family: var(--mono); font-size: 13px; line-height: 1.6; resize: vertical; }
+label.field { display: block; margin-bottom: 14px; }
+label.field > span {
+  display: block; font: 600 11px var(--sans); text-transform: uppercase;
+  letter-spacing: .07em; color: var(--ink-3); margin-bottom: 6px;
+}
+
+/* ------------------------------------------------------------------ settings */
+#settings-page { padding-bottom: 0; }   /* the sticky .savebar is the floor */
+.set-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); gap: 2px 22px; }
+.set-fields label.field { margin-bottom: 16px; }
+.set-help { color: var(--ink-3); font-size: 12px; line-height: 1.5; margin-top: 6px; }
+.set-check { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; }
+.set-check input[type="checkbox"] { width: auto; margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+.set-check .set-help { margin-top: 4px; }
+.set-check b { font-weight: 600; }
+.risky .set-help { color: var(--warn); }
+/* Last element on the page and `sticky bottom: 0`, with #settings-page dropping
+   its bottom padding — otherwise the bar unsticks short of the floor and reads
+   as floating. Opaque, not a gradient: content scrolls UNDER it. */
+.savebar {
+  position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 12px;
+  margin-top: 20px; padding: 14px 0;
+  background: var(--bg); border-top: 1px solid var(--border-2);
+}
+.savebar .note { color: var(--ink-3); font-size: 12.5px; }
+.kvrow {
+  display: flex; justify-content: space-between; gap: 14px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--border-2);
+}
+.kvrow:last-child { border-bottom: none; }
+.kvrow .k { color: var(--ink-2); font-size: 12.5px; flex: none; }
+.kvrow .v { text-align: right; overflow-wrap: anywhere; }
+
+.empty {
+  text-align: center; color: var(--ink-2); padding: 72px 24px;
+}
+.empty .glyph { color: var(--ink-3); margin-bottom: 14px; }
+.empty h2 { font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; margin-bottom: 6px; }
+.empty p { max-width: 46ch; margin: 0 auto; }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px; flex: none;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* card body — the product. measure, rhythm, code surfaces. */
+.prose { max-width: 68ch; font-size: 14.5px; line-height: 1.65; color: var(--ink); }
+.prose p { white-space: pre-wrap; overflow-wrap: break-word; }
+.prose p + p { margin-top: 10px; }
+.prose code {
+  font: 12.5px var(--mono); background: var(--surface-2);
+  border: 1px solid var(--border-2); border-radius: 4px; padding: 1px 5px;
+  overflow-wrap: break-word;
+}
+.prose pre {
+  background: var(--surface-2); border: 1px solid var(--border-2);
+  border-radius: 8px; padding: 12px 14px; margin: 10px 0;
+  overflow-x: auto;
+}
+.prose pre code { background: none; border: none; padding: 0; font-size: 12.5px; line-height: 1.6; white-space: pre; }
+
+/* ---------------------------------------------------------------- review */
+#view-review { flex-direction: column; }
+.review-bar {
+  flex: none; display: flex; align-items: center; gap: 14px;
+  padding: 10px 20px; border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.progress-text { font: 500 12.5px var(--sans); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.progress-track {
+  width: 160px; height: 4px; border-radius: 999px; background: var(--surface-3);
+  overflow: hidden;
+}
+.progress-fill { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .35s var(--ease); }
+.review-bar .grow { flex: 1; }
+
+.review-split { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px 1fr; }
+.rlist {
+  border-right: 1px solid var(--border); overflow-y: auto;
+  background: var(--surface); padding: 6px; list-style: none;
+}
+.rlist li { margin: 0; }
+.rrow {
+  display: flex; align-items: flex-start; gap: 9px; width: 100%;
+  text-align: left; background: none; border: none; border-radius: 7px;
+  padding: 9px 10px; cursor: pointer;
+  transition: background .12s var(--ease);
+}
+.rrow:hover { background: var(--surface-2); }
+.rrow[aria-current="true"] { background: var(--accent-soft); }
+.rrow .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; background: var(--tc, var(--ink-3)); }
+.rrow .rt { flex: 1; min-width: 0; }
+.rrow .rt .t {
+  font-weight: 500; font-size: 13px; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.rrow .rt .s { font: 11.5px var(--sans); color: var(--ink-3); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rrow .ai-mark { flex: none; margin-top: 4px; }
+.rrow.leaving { opacity: 0; transform: translateX(-14px); transition: opacity .18s var(--ease), transform .18s var(--ease); }
+
+/* No bottom padding: the action bar below is `sticky bottom: 0`, and padding on
+   the scroll container is INSIDE the scrollable area — 90px of it left the bar
+   hovering 90px above the floor once you reached the end. The bar carries its
+   own padding instead. */
+.rdetail { overflow-y: auto; padding: 26px 32px 0; }
+.rcard { max-width: 760px; animation: rise .25s var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.rcard .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.rcard h2 {
+  font-size: 20px; font-weight: 600; letter-spacing: -.015em; line-height: 1.3;
+  margin-bottom: 14px; max-width: 62ch;
+}
+.rcard .sect {
+  font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); margin: 24px 0 8px;
+}
+.srcline {
+  display: flex; align-items: baseline; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border-2); font-family: var(--mono); font-size: 12px;
+}
+.srcline:last-child { border-bottom: none; }
+.srcline .kind { flex: none; font: 600 10px var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); width: 72px; }
+.srcline .p { color: var(--ink-2); overflow-wrap: anywhere; }
+.srcline .prov { margin-left: auto; flex: none; color: var(--ink-3); font-size: 11px; }
+.tagrow { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.verdict {
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid; border-radius: 9px; padding: 12px 14px; margin-bottom: 16px;
+  font-size: 13.5px;
+}
+.verdict .vhead { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.verdict .vtag {
+  font: 600 10px var(--sans); text-transform: uppercase; letter-spacing: .07em;
+  padding: 3px 7px; border-radius: 4px;
+}
+.verdict p { margin-top: 4px; color: var(--ink-2); }
+.verdict.v-approve { border-color: color-mix(in srgb, var(--ok) 35%, transparent); background: color-mix(in srgb, var(--ok) 6%, var(--surface)); }
+.verdict.v-approve .vtag { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.verdict.v-reject { border-color: color-mix(in srgb, var(--danger) 35%, transparent); background: color-mix(in srgb, var(--danger) 6%, var(--surface)); }
+.verdict.v-reject .vtag { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.verdict.v-abstain, .verdict.v-loading { border-color: var(--border); background: var(--surface-2); }
+.verdict.v-abstain .vtag { color: var(--ink-2); background: var(--surface-3); }
+.verdict svg { flex: none; margin-top: 1px; color: var(--ink-3); }
+
+.actionbar {
+  position: sticky; bottom: 0; margin-top: 26px; padding: 14px 0;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  background: var(--bg); border-top: 1px solid var(--border-2);
+}
+.rdetail-inner-note { font-size: 12px; color: var(--ink-3); margin-left: auto; }
+
+/* ---------------------------------------------------------------- search */
+.searchbox { position: relative; max-width: 720px; }
+.searchbox svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none; }
+.searchbox input { padding-left: 38px; height: 42px; font-size: 15px; border-radius: 9px; }
+.result {
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+  margin-top: 12px; box-shadow: var(--shadow-1);
+  transition: border-color .15s var(--ease);
+}
+.result:hover { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+.result summary {
+  list-style: none; cursor: pointer; padding: 14px 18px; border-radius: 10px;
+}
+.result summary::-webkit-details-marker { display: none; }
+.result summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.result .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.result .head .sp { flex: 1; }
+.result h3 { font-size: 15px; font-weight: 600; letter-spacing: -.01em; margin: 8px 0 4px; }
+.result .snippet {
+  color: var(--ink-2); font-size: 13px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.result .full { padding: 2px 18px 16px; border-top: 1px solid var(--border-2); }
+.result .full .prose { padding-top: 12px; }
+.result[open] .snippet { display: none; }
+.search-note { color: var(--ink-3); font-size: 12.5px; margin-top: 14px; }
+
+/* ---------------------------------------------------------------- graph */
+#view-graph .gwrap { flex: 1; min-height: 0; position: relative; }
+#gcanvas { display: block; width: 100%; height: 100%; cursor: grab; }
+#gcanvas.dragging { cursor: grabbing; }
+.graph-hud {
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; gap: 8px; align-items: center; pointer-events: none;
+}
+.graph-hud > * { pointer-events: auto; }
+.graph-hud input { width: 240px; }
+.graph-hud select { width: auto; }
+.graph-hud input, .graph-hud select {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(8px); box-shadow: var(--shadow-1);
+}
+.gcount {
+  margin-left: auto; font: 12px var(--mono); color: var(--ink-2);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px;
+  backdrop-filter: blur(8px);
+}
+.glegend {
+  position: absolute; left: 14px; bottom: 12px;
+  display: flex; gap: 13px; flex-wrap: wrap; align-items: center;
+  font: 12px var(--sans); color: var(--ink-2);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid var(--border); border-radius: 7px; padding: 7px 11px;
+  backdrop-filter: blur(8px);
+}
+.glegend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.gpanel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 360px; max-width: 88vw;
+  background: var(--surface); border-left: 1px solid var(--border);
+  padding: 22px 24px; overflow-y: auto;
+  transform: translateX(100%); visibility: hidden;
+  transition: transform .3s var(--ease), visibility .3s;
+  box-shadow: var(--shadow-2);
+}
+.gpanel.open { transform: none; visibility: visible; }
+.gpanel h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; margin: 10px 0; }
+.gpanel .closebtn { position: absolute; top: 12px; right: 12px; }
+.gpanel .neigh {
+  display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left;
+  background: none; border: none; border-bottom: 1px solid var(--border-2);
+  padding: 8px 0; font-size: 13px; color: var(--ink); cursor: pointer;
+}
+.gpanel .neigh:hover { color: var(--accent); }
+.gpanel .neigh .k { flex: none; font: 600 9.5px var(--sans); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); width: 66px; }
+
+/* ---------------------------------------------------------------- health */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 18px; box-shadow: var(--shadow-1);
+}
+.tile .n { font: 600 26px/1.15 var(--sans); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.tile .l { color: var(--ink-2); font-size: 12.5px; margin-top: 3px; }
+.tile .sub { font: 11.5px var(--mono); color: var(--ink-3); margin-top: 5px; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 18px 20px; margin-top: 14px; box-shadow: var(--shadow-1);
+}
+.panel h3 { font-size: 13px; font-weight: 600; letter-spacing: -.005em; margin-bottom: 10px; }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 44px; gap: 12px; align-items: center; padding: 5px 0; }
+.bar-row .lab { font-size: 12.5px; color: var(--ink-2); text-align: right; }
+.bar-row .val { font: 12px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.bar-track { height: 16px; display: flex; align-items: center; }
+.bar-fill { height: 8px; border-radius: 999px; min-width: 3px; background: var(--tc, var(--accent)); opacity: .85; }
+.list-row {
+  display: flex; justify-content: space-between; gap: 16px; padding: 7px 0;
+  border-bottom: 1px solid var(--border-2); font-size: 13px;
+}
+.list-row:last-child { border-bottom: none; }
+.list-row .u { font: 12px var(--mono); color: var(--ink-2); flex: none; font-variant-numeric: tabular-nums; }
+.banner {
+  display: flex; gap: 10px; align-items: flex-start;
+  color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+  border-radius: 10px; padding: 13px 16px; margin-bottom: 16px; font-size: 13.5px;
+}
+.banner code { font: 12px var(--mono); background: color-mix(in srgb, var(--danger) 10%, transparent); border-radius: 4px; padding: 1px 5px; }
+
+/* ---------------------------------------------------------------- toasts + dialogs */
+#toasts {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 60; align-items: center;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 9px;
+  background: var(--ink); color: var(--bg);
+  border-radius: 9px; padding: 9px 15px; font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-2); animation: toast-in .22s var(--ease);
+  max-width: min(520px, 90vw);
+}
+.toast.error { background: var(--danger); color: #fff; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+dialog {
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); color: var(--ink);
+  padding: 22px 24px; max-width: 480px; width: calc(100vw - 48px);
+  box-shadow: var(--shadow-2);
+}
+dialog::backdrop { background: rgba(10, 10, 14, .45); backdrop-filter: blur(2px); }
+dialog h2 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 10px; }
+dialog p { color: var(--ink-2); font-size: 13.5px; }
+dialog p + p { margin-top: 8px; }
+.dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.keys-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px 18px; margin-top: 14px; font-size: 13.5px; }
+.keys-grid .ks { text-align: right; white-space: nowrap; }
+.keys-grid .kd { color: var(--ink-2); }
+#bulk-progress { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--ink-2); font-size: 13.5px; }
+#bulk-result { margin-top: 14px; font-size: 13.5px; }
+#bulk-result .rowline { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-2); }
+#bulk-result .rowline:last-child { border: none; }
+
+/* ---------------------------------------------------------------- responsive */
+@media (max-width: 860px) {
+  .review-split { grid-template-columns: 1fr; grid-template-rows: minmax(0, 34vh) 1fr; }
+  .rlist { border-right: none; border-bottom: 1px solid var(--border); }
+  .rdetail { padding: 18px 16px 0; }
+  .graph-hud input { width: 140px; }
+  .gpanel { width: 100%; }
+  .topbar { gap: 8px; padding: 0 10px; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="4" cy="4" r="2.4" fill="currentColor"/>
+      <circle cx="12" cy="5.5" r="1.9" fill="currentColor" opacity=".65"/>
+      <circle cx="6.5" cy="12" r="1.9" fill="currentColor" opacity=".65"/>
+      <path d="M5.8 5.4 10.5 5M5 6l1 4.2M11.5 7 7.8 10.8" stroke="currentColor" stroke-width="1.1" opacity=".5"/>
+    </svg>
+    afterwit
+  </div>
+  <nav role="tablist" aria-label="Surfaces">
+    <button class="tab" id="tab-review" role="tab" aria-selected="true" aria-controls="view-review">
+      Review <span class="pill" id="review-count"></span></button>
+    <button class="tab" id="tab-search" role="tab" aria-selected="false" aria-controls="view-search">Search</button>
+    <button class="tab" id="tab-graph" role="tab" aria-selected="false" aria-controls="view-graph">Graph</button>
+    <button class="tab" id="tab-health" role="tab" aria-selected="false" aria-controls="view-health">Health</button>
+    <button class="tab" id="tab-settings" role="tab" aria-selected="false" aria-controls="view-settings">Settings</button>
+  </nav>
+  <div class="top-actions">
+    <button class="iconbtn" id="btn-keys" aria-label="Keyboard shortcuts">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+        <rect x="1.5" y="4" width="13" height="8.5" rx="1.5"/>
+        <path d="M4 6.7h.01M6.7 6.7h.01M9.4 6.7h.01M12 6.7h.01M4 9.7h.01M12 9.7h.01M6 9.7h4"/>
+      </svg>
+    </button>
+    <button class="iconbtn" id="btn-theme" aria-label="Toggle color theme">
+      <svg class="only-light" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+        <circle cx="8" cy="8" r="3.2"/>
+        <path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1"/>
+      </svg>
+      <svg class="only-dark" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+        <path d="M13.5 9.5A5.8 5.8 0 0 1 6.5 2.5a5.8 5.8 0 1 0 7 7Z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="surface-wrap" id="view-review" role="tabpanel" aria-labelledby="tab-review">
+    <div class="review-bar">
+      <span class="progress-text" id="progress-text">Loading queue…</span>
+      <div class="progress-track" role="progressbar" aria-label="Triage progress"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <span class="grow"></span>
+      <button class="btn" id="btn-bulk" hidden>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+          <path d="M8 1.8 9.6 5l3.5.5-2.5 2.5.6 3.5L8 9.9l-3.2 1.6.6-3.5L2.9 5.5 6.4 5 8 1.8Z"/>
+        </svg>
+        Auto-review all…</button>
+      <button class="iconbtn" id="btn-reload" aria-label="Reload review queue">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 1.8v2.7h-2.7"/>
+        </svg>
+      </button>
+    </div>
+    <div class="review-split">
+      <ul class="rlist" id="rlist" aria-label="Cards awaiting review"></ul>
+      <div class="rdetail" id="rdetail"></div>
+    </div>
+  </section>
+
+  <section class="surface-wrap" id="view-search" role="tabpanel" aria-labelledby="tab-search" hidden>
+    <div class="page">
+      <div class="searchbox">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/>
+        </svg>
+        <input type="search" id="q" placeholder="Search decisions, fixes, gotchas…" aria-label="Search knowledge base" autocomplete="off">
+      </div>
+      <div id="results" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="surface-wrap" id="view-graph" role="tabpanel" aria-labelledby="tab-graph" hidden>
+    <div class="gwrap">
+      <canvas id="gcanvas" aria-label="Knowledge graph. Cards are nodes; links, supersedes, and shared files are edges."></canvas>
+      <div class="graph-hud">
+        <input type="search" id="gq" placeholder="Highlight nodes…" aria-label="Highlight graph nodes by title">
+        <select id="gproj" aria-label="Filter by project"><option value="">All projects</option></select>
+        <select id="gtype" aria-label="Filter by card type"><option value="">All types</option></select>
+        <span class="gcount" id="gcount"></span>
+      </div>
+      <div class="glegend" id="glegend"></div>
+      <div class="gpanel" id="gpanel" role="complementary" aria-label="Card detail"></div>
+      <div id="gempty" class="empty" style="position:absolute; inset:0; display:none; place-content:center"></div>
+    </div>
+  </section>
+
+  <section class="surface-wrap" id="view-health" role="tabpanel" aria-labelledby="tab-health" hidden>
+    <div class="page" id="health-page"></div>
+  </section>
+
+  <section class="surface-wrap" id="view-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+    <div class="page" id="settings-page"></div>
+  </section>
+</main>
+
+<div id="toasts" role="status" aria-live="polite"></div>
+
+<dialog id="dlg-keys" aria-labelledby="keys-title">
+  <h2 id="keys-title">Keyboard shortcuts</h2>
+  <div class="keys-grid">
+    <span class="ks"><kbd>j</kbd> / <kbd>k</kbd></span> <span class="kd">Next / previous card</span>
+    <span class="ks"><kbd>a</kbd></span>                <span class="kd">Approve current card</span>
+    <span class="ks"><kbd>r</kbd></span>                <span class="kd">Reject current card</span>
+    <span class="ks"><kbd>e</kbd></span>                <span class="kd">Edit before approving</span>
+    <span class="ks"><kbd>o</kbd></span>                <span class="kd">Ask AI for a second opinion</span>
+    <span class="ks"><kbd>Esc</kbd></span>              <span class="kd">Cancel edit / close panels</span>
+    <span class="ks"><kbd>⌘</kbd>+<kbd>Enter</kbd></span> <span class="kd">Approve while editing</span>
+    <span class="ks"><kbd>1</kbd>–<kbd>5</kbd></span>   <span class="kd">Switch surface</span>
+    <span class="ks"><kbd>?</kbd></span>                <span class="kd">This overlay</span>
+  </div>
+  <div class="dlg-actions"><button class="btn" id="keys-close">Close</button></div>
+</dialog>
+
+<dialog id="dlg-bulk" aria-labelledby="bulk-title">
+  <h2 id="bulk-title">Auto-review the whole queue?</h2>
+  <p id="bulk-desc"></p>
+  <p>The model reads each card and <strong>applies</strong> its verdict immediately — approve, reject, or abstain. Abstained cards stay in the queue for you. This can take a while and cannot be interrupted.</p>
+  <div id="bulk-progress" hidden><span class="spinner"></span><span>Reviewing… leave this window open.</span></div>
+  <div id="bulk-result" hidden></div>
+  <div class="dlg-actions">
+    <button class="btn" id="bulk-cancel">Cancel</button>
+    <button class="btn primary" id="bulk-run">Run auto-review</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+/* ================================================================ helpers */
+const $ = (s, el = document) => el.querySelector(s);
+const TYPES = ["decision", "error_fix", "gotcha", "preference", "fact", "snippet", "capability"];
+const TYPE_LABEL = { decision: "Decision", error_fix: "Error fix", gotcha: "Gotcha",
+                     preference: "Preference", fact: "Fact", snippet: "Snippet", capability: "Capability" };
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* el(): every string child becomes a TEXT NODE (never parsed as HTML).
+   This is the single DOM-building path for all card/server data — XSS-safe
+   by construction. Do not add innerHTML anywhere in this file. */
+function el(tag, attrs, ...children) {
+  const n = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null) continue;
+    if (k === "class") n.className = v;
+    else if (k === "dataset") Object.assign(n.dataset, v);
+    else if (k.startsWith("on")) n[k] = v;
+    else if (k === "style") n.style.cssText = v;
+    else n.setAttribute(k, v);
+  }
+  for (const c of children.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    n.append(c.nodeType ? c : String(c));
+  }
+  return n;
+}
+/* kids(): same child normalization as el() (flattens arrays, skips null/false,
+   strings → text nodes) for replaceChildren targets. */
+function kids(...children) {
+  const f = document.createDocumentFragment();
+  for (const c of children.flat(Infinity)) {
+    if (c == null || c === false) continue;
+    f.append(c.nodeType ? c : String(c));
+  }
+  return f;
+}
+function svgIcon(d, size = 14) {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("width", size); s.setAttribute("height", size);
+  s.setAttribute("viewBox", "0 0 16 16"); s.setAttribute("fill", "none");
+  s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "1.3");
+  s.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", d); p.setAttribute("stroke-linecap", "round"); p.setAttribute("stroke-linejoin", "round");
+  s.append(p);
+  return s;
+}
+const ICON = {
+  spark: "M8 1.8 9.6 5l3.5.5-2.5 2.5.6 3.5L8 9.9l-3.2 1.6.6-3.5L2.9 5.5 6.4 5 8 1.8Z",
+  check: "m3 8.5 3.2 3.2L13 4.5",
+  x: "m4 4 8 8M12 4l-8 8",
+  bot: "M5 6.5h6a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2ZM8 6.5V4M8 4a1.2 1.2 0 1 0 0-2.4A1.2 1.2 0 0 0 8 4ZM6 10h.01M10 10h.01",
+  warn: "M8 2.2 14.5 13.5h-13L8 2.2ZM8 6.8v3M8 11.9h.01",
+  inbox: "M2 9.5 4 3.5h8l2 6M2 9.5v3h12v-3M2 9.5h3.5l1 1.5h3l1-1.5H14",
+};
+function badge(type) {
+  const t = TYPES.includes(type) ? type : "fact";
+  return el("span", { class: "badge", style: `--tc: var(--c-${t})` }, TYPE_LABEL[t] || type);
+}
+function fmtDate(s) { return (s || "").slice(0, 10); }
+
+/* toast: the single visible error/notice channel. Never fail silently. */
+function toast(msg, kind = "info") {
+  const t = el("div", { class: "toast" + (kind === "error" ? " error" : "") },
+    kind === "error" ? svgIcon(ICON.warn) : null, msg);
+  $("#toasts").append(t);
+  setTimeout(() => { t.style.opacity = "0"; t.style.transition = "opacity .3s"; setTimeout(() => t.remove(), 350); }, 4200);
+}
+
+async function api(path, opts, _retried) {
+  let r;
+  try { r = await fetch(path, opts); }
+  catch { throw new Error("Server unreachable — is `afterwit ui` still running?"); }
+  let data = null;
+  try { data = await r.json(); } catch { /* non-JSON error body */ }
+  if (r.status === 410) { const e = new Error("gone"); e.gone = true; throw e; }
+  // The CSRF token is per SERVER PROCESS, so restarting `afterwit ui` invalidates
+  // the one this tab fetched at boot and every POST 403s until a manual reload.
+  // Re-fetch it and retry once. Gated on code === "csrf" because /autoreview also
+  // answers 403 (auto-review disabled), and retrying that would just loop.
+  if (r.status === 403 && data && data.code === "csrf" && !_retried) {
+    await loadConfig();
+    return api(path, { ...opts, headers: { ...(opts && opts.headers),
+                                           "X-Afterwit-CSRF": CONFIG.csrf_token || "" } }, true);
+  }
+  if (!r.ok) throw new Error((data && data.error) || `Request failed (HTTP ${r.status})`);
+  return data;
+}
+const postJSON = body => ({ method: "POST", headers: { "Content-Type": "application/json",
+                            "X-Afterwit-CSRF": CONFIG.csrf_token || "" },
+                            body: JSON.stringify(body || {}) });
+
+/* Minimal markdown-ish renderer. SECURITY: input is untrusted LLM text.
+   We never parse it as HTML — fenced blocks, `code`, and **bold** are
+   tokenized and emitted as elements whose content is set via text nodes. */
+function renderInline(text) {
+  const out = [];
+  const re = /`([^`\n]+)`|\*\*([^*\n]+)\*\*/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(m[1] != null ? el("code", null, m[1]) : el("strong", null, m[2]));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+function renderBody(text) {
+  const root = el("div", { class: "prose" });
+  const parts = String(text ?? "").split(/^```|\n```/);
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) { // inside a fence; drop the language tag line
+      const code = part.replace(/^[\w+-]*\n?/, "").replace(/\n$/, "");
+      root.append(el("pre", null, el("code", null, code)));
+    } else {
+      for (const para of part.split(/\n{2,}/)) {
+        const trimmed = para.replace(/^\n+|\n+$/g, "");
+        if (trimmed) root.append(el("p", null, renderInline(trimmed)));
+      }
+    }
+  });
+  return root;
+}
+
+function emptyState(icon, title, body) {
+  return el("div", { class: "empty" },
+    el("div", { class: "glyph" }, svgIcon(icon, 30)),
+    el("h2", null, title),
+    el("p", null, body));
+}
+
+/* ================================================================ theme */
+let G = null; // graph runtime state; declared early — applyTheme touches it
+const themeBtn = $("#btn-theme");
+function applyTheme(t) {
+  if (t) document.documentElement.dataset.theme = t;
+  else delete document.documentElement.dataset.theme;
+  if (G) G.pal = null; // graph re-reads palette
+}
+applyTheme(localStorage.getItem("afterwit-theme"));
+themeBtn.onclick = () => {
+  const dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
+  const next = dark ? "light" : "dark";
+  localStorage.setItem("afterwit-theme", next);
+  applyTheme(next);
+};
+
+/* ================================================================ tabs */
+const SURFACES = ["review", "search", "graph", "health", "settings"];
+let tab = "review";
+function show(t) {
+  if (!SURFACES.includes(t)) t = "review";
+  tab = t;
+  if (location.hash.slice(1) !== t) history.replaceState(null, "", "#" + t);
+  for (const s of SURFACES) {
+    $("#tab-" + s).setAttribute("aria-selected", s === t);
+    $("#view-" + s).hidden = s !== t;
+  }
+  if (t !== "graph") stopGraph();
+  if (t === "review") renderReview();
+  if (t === "search") { renderSearchShell(); $("#q").focus(); }
+  if (t === "graph") loadGraph();
+  if (t === "health") renderHealth();
+  if (t === "settings") renderSettings();
+}
+for (const s of SURFACES) $("#tab-" + s).onclick = () => show(s);
+
+/* ================================================================ config */
+let CONFIG = { auto_review: false, auto_review_model: null, wiki_root: "", csrf_token: "" };
+async function loadConfig() {
+  try { CONFIG = { ...CONFIG, ...(await api("/api/config")) }; }
+  catch { /* older server without /api/config → auto-review stays hidden */ }
+}
+
+/* ================================================================ review */
+const Q = {
+  items: [], sel: 0, done: 0, total: 0, loaded: false,
+  editing: false, busy: false,
+  verdicts: new Map(),  // rowid → {verdict, reason} | "loading"
+};
+const rlist = $("#rlist"), rdetail = $("#rdetail");
+
+async function loadQueue() {
+  try {
+    Q.items = await api("/api/review");
+    Q.total = Q.items.length; Q.done = 0; Q.sel = 0;
+    Q.editing = false; Q.loaded = true;
+  } catch (e) {
+    Q.items = []; Q.total = 0; Q.loaded = true;
+    toast(e.message, "error");
+  }
+  updateCounts();
+}
+
+function updateCounts() {
+  const left = Q.items.length;
+  $("#review-count").textContent = left || "";
+  const pct = Q.total ? Math.round((Q.done / Q.total) * 100) : 0;
+  $("#progress-fill").style.width = pct + "%";
+  $("#progress-track").setAttribute("aria-valuenow", pct);
+  $("#progress-text").textContent =
+    left === 0 ? (Q.done ? `All ${Q.done} reviewed` : "Queue is clear")
+    : Q.done === 0 ? `${left} card${left === 1 ? "" : "s"} to review`
+    : `${Q.done} done · ${left} remaining`;
+  $("#btn-bulk").hidden = !(CONFIG.auto_review && left > 0);
+}
+
+function renderReview() {
+  renderList();
+  renderDetail();
+}
+
+function renderList() {
+  const frag = document.createDocumentFragment();
+  Q.items.forEach((it, i) => {
+    const c = it.card, t = TYPES.includes(c.type) ? c.type : "fact";
+    const v = Q.verdicts.get(it.rowid);
+    const row = el("button", {
+      class: "rrow", "aria-current": String(i === Q.sel),
+      onclick: () => { if (!Q.editing) { Q.sel = i; refreshSelection(); } },
+    },
+      el("span", { class: "dot", style: `--tc: var(--c-${t})` }),
+      el("span", { class: "rt" },
+        el("span", { class: "t" }, c.title || "(untitled)"),
+        el("span", { class: "s" }, [c.project, it.reason].filter(Boolean).join(" · "))),
+      v && v !== "loading"
+        ? el("span", { class: "ai-mark", title: "AI suggestion: " + v.verdict, style: "color: var(--ink-3)" }, svgIcon(ICON.bot, 13))
+        : null);
+    frag.append(el("li", null, row));
+  });
+  rlist.replaceChildren(frag);
+}
+
+function refreshSelection() {
+  rlist.querySelectorAll(".rrow").forEach((r, i) => r.setAttribute("aria-current", String(i === Q.sel)));
+  const cur = rlist.querySelectorAll(".rrow")[Q.sel];
+  if (cur) cur.scrollIntoView({ block: "nearest", behavior: REDUCED ? "auto" : "smooth" });
+  Q.editing = false;
+  renderDetail();
+}
+
+function current() { return Q.items[Q.sel]; }
+
+function move(d) {
+  if (Q.editing || !Q.items.length) return;
+  const n = Math.min(Math.max(Q.sel + d, 0), Q.items.length - 1);
+  if (n !== Q.sel) { Q.sel = n; refreshSelection(); }
+}
+
+function verdictBanner(rowid) {
+  const v = Q.verdicts.get(rowid);
+  if (!v) return null;
+  if (v === "loading")
+    return el("div", { class: "verdict v-loading" }, el("span", { class: "spinner" }),
+      el("div", null, el("div", { class: "vhead" }, "Asking the model for a second opinion…")));
+  const label = { approve: "suggests approve", reject: "suggests reject", abstain: "abstained" }[v.verdict] || v.verdict;
+  return el("div", { class: "verdict v-" + v.verdict, role: "note" },
+    svgIcon(ICON.bot, 16),
+    el("div", null,
+      el("div", { class: "vhead" },
+        el("span", { class: "vtag" }, "AI suggestion"),
+        `Model ${label} — advisory only, you decide`),
+      el("p", null, v.reason || "No reason given.")));
+}
+
+function renderDetail() {
+  if (!Q.loaded) { rdetail.replaceChildren(el("div", { class: "empty" }, el("span", { class: "spinner" }))); return; }
+  const it = current();
+  if (!it) {
+    rdetail.replaceChildren(emptyState(ICON.inbox, "Queue is clear.",
+      "New candidate cards appear here after each distillation run, or when an agent proposes an insight. Approving a card is what makes it trusted enough to reach future prompts."));
+    updateCounts();
+    return;
+  }
+  const c = it.card;
+  const host = el("div", { class: "rcard" });
+
+  host.append(el("div", { class: "meta-row" },
+    badge(c.type),
+    el("span", { class: "chip warn", title: "Why this card is queued" }, it.reason || "queued"),
+    c.project ? el("span", { class: "chip" }, c.project) : null,
+    el("span", { class: "chip mono", title: "Extractor confidence" }, "conf " + Number(c.confidence ?? 0).toFixed(2)),
+    c.created ? el("span", { class: "chip mono" }, fmtDate(c.created)) : null,
+    c.source_commit ? el("span", { class: "chip mono", title: "Anchored to commit" }, String(c.source_commit).slice(0, 7)) : null,
+    // who extracted it, driver:model:effort — a weak model is a reason to read harder
+    c.distilled_by ? el("span", { class: "chip mono", title: "Distilled by (driver:model:effort)" },
+      svgIcon(ICON.bot), c.distilled_by) : null));
+
+  const vb = verdictBanner(it.rowid);
+  if (vb) host.append(vb);
+
+  if (Q.editing) {
+    host.append(
+      el("label", { class: "field" }, el("span", null, "Title"),
+        el("input", { type: "text", id: "edit-title", value: c.title || "" })),
+      el("label", { class: "field" }, el("span", null, "Body"),
+        el("textarea", { id: "edit-body", rows: "12" }, c.body || "")),
+      el("label", { class: "field" }, el("span", null, "Type"),
+        el("select", { id: "edit-type" },
+          TYPES.map(t => { const o = el("option", { value: t }, TYPE_LABEL[t]); if (t === c.type) o.selected = true; return o; }))),
+      el("label", { class: "field" }, el("span", null, "Tags (comma-separated)"),
+        el("input", { type: "text", id: "edit-tags", value: (c.tags || []).join(", ") })));
+  } else {
+    host.append(el("h2", null, c.title || "(untitled)"));
+    host.append(renderBody(c.body));
+    if ((c.tags || []).length) {
+      host.append(el("div", { class: "sect" }, "Tags"),
+        el("div", { class: "tagrow" }, c.tags.map(t => el("span", { class: "chip" }, t))));
+    }
+  }
+
+  if ((c.sources || []).length) {
+    host.append(el("div", { class: "sect" }, "Sources"),
+      el("div", null, c.sources.map(s =>
+        el("div", { class: "srcline" },
+          el("span", { class: "kind" }, s.kind || "source"),
+          el("span", { class: "p" }, s.path + (s.lines ? ":" + s.lines : "")),
+          // what the SESSION ran on: harness · model · effort, when known
+          s.model || s.harness ? el("span", { class: "prov", title: "What the session ran on" },
+            [s.harness, s.model, s.effort].filter(Boolean).join(" · ")) : null))));
+  }
+  if ((c.files || []).length) {
+    host.append(el("div", { class: "sect" }, "Files touched"),
+      el("div", { class: "tagrow" }, c.files.map(f => el("span", { class: "chip mono" }, f))));
+  }
+
+  const bar = el("div", { class: "actionbar" });
+  if (Q.editing) {
+    bar.append(
+      el("button", { class: "btn primary", onclick: () => actApprove() }, svgIcon(ICON.check), "Approve with edits", el("kbd", null, "⌘↵")),
+      el("button", { class: "btn", onclick: () => { Q.editing = false; renderDetail(); } }, "Cancel", el("kbd", null, "esc")));
+  } else {
+    bar.append(
+      el("button", { class: "btn primary", onclick: () => actApprove() }, svgIcon(ICON.check), "Approve", el("kbd", null, "a")),
+      el("button", { class: "btn", onclick: () => startEdit() }, "Edit", el("kbd", null, "e")),
+      el("button", { class: "btn danger", onclick: () => actReject() }, svgIcon(ICON.x), "Reject", el("kbd", null, "r")));
+    if (CONFIG.auto_review)
+      bar.append(el("button", { class: "btn", onclick: () => actAuto(), title: CONFIG.auto_review_model ? "Model: " + CONFIG.auto_review_model : null },
+        svgIcon(ICON.bot), "Second opinion", el("kbd", null, "o")));
+    bar.append(el("span", { class: "rdetail-inner-note" }, "approval is what makes a card trusted"));
+  }
+  host.append(bar);
+
+  rdetail.replaceChildren(host);
+  rdetail.scrollTop = 0;
+  if (Q.editing) $("#edit-title")?.focus();
+}
+
+function startEdit() { if (current()) { Q.editing = true; renderDetail(); } }
+
+function collectEdits(orig) {
+  const edited = {
+    title: $("#edit-title").value.trim(),
+    body: $("#edit-body").value,
+    type: $("#edit-type").value,
+    tags: $("#edit-tags").value.split(",").map(s => s.trim()).filter(Boolean),
+  };
+  const diff = {};
+  if (edited.title !== (orig.title || "")) diff.title = edited.title;
+  if (edited.body !== (orig.body || "")) diff.body = edited.body;
+  if (edited.type !== orig.type) diff.type = edited.type;
+  if (JSON.stringify(edited.tags) !== JSON.stringify(orig.tags || [])) diff.tags = edited.tags;
+  return Object.keys(diff).length ? diff : null;
+}
+
+function removeCurrent() {
+  const rows = rlist.querySelectorAll(".rrow");
+  const row = rows[Q.sel];
+  Q.items.splice(Q.sel, 1);
+  Q.done++;
+  if (Q.sel >= Q.items.length) Q.sel = Math.max(0, Q.items.length - 1);
+  Q.editing = false;
+  const finish = () => { renderList(); renderDetail(); updateCounts(); };
+  if (row && !REDUCED) { row.classList.add("leaving"); setTimeout(finish, 160); }
+  else finish();
+}
+
+async function actApprove() {
+  const it = current();
+  if (!it || Q.busy) return;
+  const diff = Q.editing ? collectEdits(it.card) : null;
+  Q.busy = true;
+  try {
+    await api(`/api/review/${it.rowid}/approve`, postJSON(diff ? { card: diff } : {}));
+    removeCurrent();
+  } catch (e) {
+    if (e.gone) { toast("That card was already handled elsewhere."); removeCurrent(); }
+    else toast("Approve failed: " + e.message, "error");
+  } finally { Q.busy = false; }
+}
+
+async function actReject() {
+  const it = current();
+  if (!it || Q.busy || Q.editing) return;
+  Q.busy = true;
+  try {
+    await api(`/api/review/${it.rowid}/reject`, postJSON());
+    removeCurrent();
+  } catch (e) {
+    if (e.gone) { toast("That card was already handled elsewhere."); removeCurrent(); }
+    else toast("Reject failed: " + e.message, "error");
+  } finally { Q.busy = false; }
+}
+
+async function actAuto() {
+  const it = current();
+  if (!it || !CONFIG.auto_review || Q.editing) return;
+  if (Q.verdicts.get(it.rowid) === "loading") return;
+  Q.verdicts.set(it.rowid, "loading");
+  renderDetail();
+  try {
+    const v = await api(`/api/review/${it.rowid}/autoreview`, postJSON());
+    Q.verdicts.set(it.rowid, v);
+  } catch (e) {
+    Q.verdicts.delete(it.rowid);
+    toast("Auto-review failed: " + e.message, "error");
+  }
+  if (current() === it || Q.items.includes(it)) { renderList(); renderDetail(); }
+}
+
+$("#btn-reload").onclick = async () => { await loadQueue(); renderReview(); };
+
+/* bulk auto-review — explicit confirm, visible progress, applied verdicts */
+const dlgBulk = $("#dlg-bulk");
+$("#btn-bulk").onclick = () => {
+  $("#bulk-desc").textContent =
+    `${Q.items.length} card${Q.items.length === 1 ? "" : "s"} are waiting.` +
+    (CONFIG.auto_review_model ? ` Model: ${CONFIG.auto_review_model}.` : "");
+  $("#bulk-progress").hidden = true;
+  $("#bulk-result").hidden = true;
+  $("#bulk-run").disabled = false;
+  $("#bulk-cancel").disabled = false;
+  $("#bulk-cancel").textContent = "Cancel";
+  dlgBulk.showModal();
+};
+$("#bulk-cancel").onclick = () => dlgBulk.close();
+$("#keys-close").onclick = () => $("#dlg-keys").close();
+$("#btn-keys").onclick = () => $("#dlg-keys").showModal();
+$("#bulk-run").onclick = async () => {
+  $("#bulk-run").disabled = true;
+  $("#bulk-cancel").disabled = true;
+  $("#bulk-progress").hidden = false;
+  try {
+    const r = await api("/api/review/autoreview-all", postJSON());
+    $("#bulk-progress").hidden = true;
+    const line = (k, v) => el("div", { class: "rowline" }, el("span", null, k), el("span", { class: "mono" }, String(v)));
+    $("#bulk-result").replaceChildren(
+      line("Approved", r.approved), line("Rejected", r.rejected),
+      line("Left for you (abstained)", r.abstained),
+      r.errors ? line("Errors", r.errors) : "");
+    $("#bulk-result").hidden = false;
+  } catch (e) {
+    $("#bulk-progress").hidden = true;
+    $("#bulk-result").replaceChildren(el("span", { style: "color: var(--danger)" }, "Failed: " + e.message));
+    $("#bulk-result").hidden = false;
+  }
+  $("#bulk-cancel").disabled = false;
+  $("#bulk-cancel").textContent = "Close";
+  await loadQueue();
+  renderReview();
+};
+
+/* ================================================================ keyboard */
+document.addEventListener("keydown", e => {
+  if (e.defaultPrevented) return;
+  const t = e.target;
+  const typing = t instanceof HTMLElement &&
+    (t.matches("input, textarea, select") || t.isContentEditable);
+  const dialogOpen = document.querySelector("dialog[open]");
+
+  if (e.key === "Escape") {
+    if (!dialogOpen && Q.editing) { Q.editing = false; renderDetail(); }
+    return; // dialogs close themselves on Esc
+  }
+  if (typing) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && Q.editing && tab === "review") {
+      e.preventDefault(); actApprove();
+    }
+    return;
+  }
+  if (dialogOpen) return;
+
+  if (e.key === "?") { e.preventDefault(); $("#dlg-keys").showModal(); return; }
+  const nTab = { "1": "review", "2": "search", "3": "graph", "4": "health", "5": "settings" }[e.key];
+  if (nTab && !e.metaKey && !e.ctrlKey && !e.altKey) { show(nTab); return; }
+
+  if (tab !== "review") return;
+  if (e.key === "j" || e.key === "ArrowDown") { e.preventDefault(); move(1); }
+  else if (e.key === "k" || e.key === "ArrowUp") { e.preventDefault(); move(-1); }
+  else if (e.key === "a") actApprove();
+  else if (e.key === "r") actReject();
+  else if (e.key === "e") startEdit();
+  else if (e.key === "o") actAuto();
+});
+
+/* ================================================================ search */
+let searchInit = false;
+function renderSearchShell() {
+  if (searchInit) return;
+  searchInit = true;
+  const input = $("#q"), results = $("#results");
+  let timer = 0, seq = 0;
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(runSearch, 150); // debounce: never re-render per keystroke
+  });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { clearTimeout(timer); runSearch(); } });
+
+  async function runSearch() {
+    const q = input.value.trim();
+    const my = ++seq;
+    if (!q) { results.replaceChildren(); return; }
+    let rs;
+    try { rs = await api("/api/search?q=" + encodeURIComponent(q)); }
+    catch (e) {
+      if (my === seq) results.replaceChildren(emptyState(ICON.warn, "Search failed", e.message));
+      return;
+    }
+    if (my !== seq) return; // a newer query answered first
+    if (!rs.length) {
+      results.replaceChildren(emptyState(ICON.spark, "Nothing above the floor.",
+        "No relevant knowledge recorded for that query — which is itself a first-class answer."));
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const s of rs) {
+      const det = el("details", { class: "result" });
+      const summary = el("summary", null,
+        el("div", { class: "head" },
+          badge(s.type),
+          s.project ? el("span", { class: "chip" }, s.project) : null,
+          s.stale ? el("span", { class: "chip warn", title: "The code this card points at has changed since" }, "stale") : null,
+          s.verified ? el("span", { class: "chip ok", title: "Human-approved" }, "verified") : null,
+          el("span", { class: "head sp" }),
+          el("span", { class: "mono", style: "color: var(--ink-3)" }, fmtDate(s.updated)),
+          el("span", { class: "mono", title: "Relevance score" }, Number(s.score).toFixed(2))),
+        el("h3", null, s.title),
+        el("div", { class: "snippet" }, String(s.body || "").replace(/```/g, " ").slice(0, 300)));
+      det.append(summary,
+        el("div", { class: "full" }, renderBody(s.body),
+          el("div", { class: "search-note mono" }, s.id)));
+      frag.append(det);
+    }
+    frag.append(el("div", { class: "search-note" },
+      `${rs.length} result${rs.length === 1 ? "" : "s"} — click a result to read the full card`));
+    results.replaceChildren(frag);
+  }
+}
+
+/* ================================================================ graph */
+function stopGraph() { if (G) { cancelAnimationFrame(G.raf); G.ro?.disconnect(); G = null; } }
+
+function gpalette() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => cs.getPropertyValue(n).trim();
+  return {
+    type: Object.fromEntries(TYPES.map(t => [t, v("--c-" + t)])),
+    ink: v("--ink"), ink3: v("--ink-3"), surface: v("--surface"), bg: v("--bg"), accent: v("--accent"),
+  };
+}
+
+async function loadGraph() {
+  stopGraph();
+  let data;
+  try { data = await api("/api/graph"); }
+  catch (e) {
+    $("#gempty").style.display = "grid";
+    $("#gempty").replaceChildren(emptyState(ICON.warn, "Could not load the graph", e.message));
+    return;
+  }
+  $("#gcount").textContent = `${data.nodes.length} cards · ${data.edges.length} links`;
+  const legend = $("#glegend");
+  legend.replaceChildren(
+    ...TYPES.filter(t => t !== "snippet" || data.nodes.some(n => n.type === "snippet")).map(t =>
+      el("span", null, el("span", { class: "dot", style: `background: var(--c-${t})` }), TYPE_LABEL[t])),
+    el("span", { style: "color: var(--ink-3)" }, "— link · ┄ supersede · ⋯ shared file"));
+  if (!data.nodes.length) {
+    $("#gempty").style.display = "grid";
+    $("#gempty").replaceChildren(emptyState(ICON.spark, "No knowledge yet.",
+      "The graph draws itself as sessions are distilled and cards are approved."));
+    return;
+  }
+  $("#gempty").style.display = "none";
+  startGraph(data);
+}
+
+function startGraph(data) {
+  const canvas = $("#gcanvas"), ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  let W = 0, H = 0;
+  function sizeCanvas() {
+    W = canvas.clientWidth; H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  sizeCanvas();
+
+  const nodes = data.nodes.map(n => ({ ...n,
+    r: 5 + Math.min(Math.max(n.usefulness || 0, 0) * 1.4, 7),
+    x: 0, y: 0, vx: 0, vy: 0, fixed: false }));
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const edges = data.edges
+    .map(e => ({ ...e, s: byId.get(e.source), t: byId.get(e.target) }))
+    .filter(e => e.s && e.t);
+  const adj = new Map(nodes.map(n => [n.id, []]));
+  for (const e of edges) { adj.get(e.s.id).push(e); adj.get(e.t.id).push(e); }
+
+  // seed positions: project clusters on a ring
+  const projects = [...new Set(nodes.map(n => n.project))].sort();
+  const pIdx = new Map(projects.map((p, i) => [p, i]));
+  for (const n of nodes) {
+    const a = (pIdx.get(n.project) / projects.length) * 2 * Math.PI;
+    const R = Math.min(W, H) * 0.28;
+    n.x = W / 2 + R * Math.cos(a) + (Math.random() - .5) * 90;
+    n.y = H / 2 + R * Math.sin(a) + (Math.random() - .5) * 90;
+  }
+  const projSel = $("#gproj"), typeSel = $("#gtype");
+  projSel.replaceChildren(kids(el("option", { value: "" }, "All projects"),
+    projects.map(p => el("option", { value: p }, p))));
+  typeSel.replaceChildren(kids(el("option", { value: "" }, "All types"),
+    TYPES.map(t => el("option", { value: t }, TYPE_LABEL[t]))));
+
+  G = { raf: 0, alpha: 1, tx: 0, ty: 0, scale: 1, hover: null, selected: null,
+        q: "", fp: "", ft: "", pal: null, ro: null };
+
+  const visible = n => (!G.fp || n.project === G.fp) && (!G.ft || n.type === G.ft);
+  const matches = n => G.q && n.title.toLowerCase().includes(G.q);
+
+  function tick() {
+    if (G.alpha < 0.005) return;
+    G.alpha *= 0.985;
+    const cent = {};
+    for (const n of nodes) {
+      const c = cent[n.project] ||= { x: 0, y: 0, k: 0 };
+      c.x += n.x; c.y += n.y; c.k++;
+    }
+    for (let i = 0; i < nodes.length; i++) {          // repulsion (fine ≤ ~1500 nodes)
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        let dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy || 1;
+        if (d2 > 40000) continue;
+        const f = 900 / d2 * G.alpha;
+        const d = Math.sqrt(d2);
+        dx = dx / d * f; dy = dy / d * f;
+        a.vx += dx; a.vy += dy; b.vx -= dx; b.vy -= dy;
+      }
+    }
+    for (const e of edges) {                          // springs
+      const dx = e.t.x - e.s.x, dy = e.t.y - e.s.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const f = (d - (e.kind === "file" ? 110 : 70)) * 0.02 * G.alpha;
+      e.s.vx += dx / d * f; e.s.vy += dy / d * f; e.t.vx -= dx / d * f; e.t.vy -= dy / d * f;
+    }
+    for (const n of nodes) {
+      const c = cent[n.project];
+      n.vx += ((c.x / c.k) - n.x) * 0.004 * G.alpha;  // cluster cohesion
+      n.vy += ((c.y / c.k) - n.y) * 0.004 * G.alpha;
+      n.vx += (W / 2 - n.x) * 0.0012 * G.alpha;       // gravity
+      n.vy += (H / 2 - n.y) * 0.0012 * G.alpha;
+      if (!n.fixed) { n.x += n.vx; n.y += n.vy; }
+      n.vx *= 0.82; n.vy *= 0.82;
+    }
+  }
+
+  const EDGE_ALPHA = { wikilink: .30, supersede: .45, file: .16 };
+  function draw() {
+    const pal = G.pal ||= gpalette();
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(G.tx, G.ty); ctx.scale(G.scale, G.scale);
+    const focus = G.hover || G.selected;
+    const inFocus = new Set();
+    if (focus) {
+      inFocus.add(focus.id);
+      for (const e of adj.get(focus.id)) { inFocus.add(e.s.id); inFocus.add(e.t.id); }
+    }
+    for (const e of edges) {
+      if (!visible(e.s) || !visible(e.t)) continue;
+      const dimmed = focus && !(inFocus.has(e.s.id) && inFocus.has(e.t.id));
+      ctx.globalAlpha = (dimmed ? .12 : 1) * EDGE_ALPHA[e.kind];
+      ctx.strokeStyle = e.kind === "supersede" ? pal.type.error_fix : pal.ink;
+      ctx.lineWidth = (e.kind === "file" ? 1 : 1.1) / G.scale;
+      ctx.setLineDash((e.kind === "supersede" ? [5, 4] : e.kind === "file" ? [2, 3] : []).map(d => d / G.scale));
+      ctx.beginPath(); ctx.moveTo(e.s.x, e.s.y); ctx.lineTo(e.t.x, e.t.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (const n of nodes) {
+      if (!visible(n)) continue;
+      const dim = (focus && !inFocus.has(n.id)) || (G.q && !matches(n));
+      ctx.globalAlpha = dim ? .16 : 1;
+      const color = pal.type[n.type] || pal.ink3;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7);
+      if (n.status === "active") { ctx.fillStyle = color; ctx.fill(); }
+      else { ctx.fillStyle = pal.bg; ctx.fill();
+             ctx.strokeStyle = color; ctx.lineWidth = 1.2 / G.scale; ctx.stroke(); }
+      ctx.strokeStyle = pal.surface; ctx.lineWidth = 1.5 / G.scale;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7); ctx.stroke();
+      if ((n === focus) || matches(n) || (G.scale > 1.6 && !dim) || (n.r > 9 && !focus)) {
+        ctx.font = `${11 / G.scale}px ${"ui-monospace, monospace"}`;
+        ctx.fillStyle = pal.ink;
+        ctx.globalAlpha = dim ? .3 : .85;
+        ctx.fillText(n.title.slice(0, 42), n.x + n.r + 4 / G.scale, n.y + 3 / G.scale);
+      }
+    }
+    ctx.restore();
+  }
+
+  if (REDUCED) { for (let i = 0; i < 400 && G.alpha >= 0.005; i++) tick(); }
+  function loop() { tick(); draw(); G.raf = requestAnimationFrame(loop); }
+  loop();
+
+  G.ro = new ResizeObserver(() => { sizeCanvas(); G.alpha = Math.max(G.alpha, .1); });
+  G.ro.observe(canvas.parentElement);
+
+  const toWorld = (mx, my) => [(mx - G.tx) / G.scale, (my - G.ty) / G.scale];
+  const pick = (mx, my) => {
+    const [x, y] = toWorld(mx, my);
+    let best = null, bd = 1e9;
+    for (const n of nodes) {
+      if (!visible(n)) continue;
+      const d = Math.hypot(n.x - x, n.y - y);
+      if (d < Math.max(n.r + 6, 10) && d < bd) { best = n; bd = d; }
+    }
+    return best;
+  };
+
+  let drag = null, panning = false, px = 0, py = 0, moved = 0;
+  canvas.onmousedown = e => {
+    const n = pick(e.offsetX, e.offsetY);
+    if (n) { drag = n; n.fixed = true; G.alpha = Math.max(G.alpha, .3); }
+    else panning = true;
+    px = e.offsetX; py = e.offsetY; moved = 0;
+    canvas.classList.add("dragging");
+  };
+  canvas.onmousemove = e => {
+    if (!G) return;
+    if (drag) {
+      const [x, y] = toWorld(e.offsetX, e.offsetY);
+      moved += Math.abs(drag.x - x) + Math.abs(drag.y - y);
+      drag.x = x; drag.y = y; G.alpha = Math.max(G.alpha, .1);
+    } else if (panning) {
+      moved += Math.abs(e.offsetX - px) + Math.abs(e.offsetY - py);
+      G.tx += e.offsetX - px; G.ty += e.offsetY - py; px = e.offsetX; py = e.offsetY;
+    } else {
+      const h = pick(e.offsetX, e.offsetY);
+      if (h !== G.hover) { G.hover = h; canvas.style.cursor = h ? "pointer" : "grab"; }
+    }
+  };
+  window.addEventListener("mouseup", () => {
+    if (drag) { drag.fixed = false; drag = null; }
+    panning = false; canvas.classList.remove("dragging");
+  });
+  canvas.onwheel = e => {
+    e.preventDefault();
+    const k = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const ns = Math.min(Math.max(G.scale * k, .25), 5);
+    G.tx = e.offsetX - (e.offsetX - G.tx) * (ns / G.scale);
+    G.ty = e.offsetY - (e.offsetY - G.ty) * (ns / G.scale);
+    G.scale = ns;
+  };
+  canvas.onclick = e => {
+    if (moved > 4) return; // that was a drag/pan
+    const n = pick(e.offsetX, e.offsetY);
+    G.selected = n;
+    if (n) openPanel(n); else closePanel();
+  };
+
+  const panel = $("#gpanel");
+  function closePanel() { panel.classList.remove("open"); if (G) G.selected = null; }
+
+  async function openPanel(n) {
+    let d;
+    try { d = await api("/api/card?id=" + encodeURIComponent(n.id)); }
+    catch (e) { toast("Could not load card: " + e.message, "error"); return; }
+    const neighbors = adj.get(n.id).map(e2 => {
+      const o = e2.s.id === n.id ? e2.t : e2.s;
+      return el("button", { class: "neigh", onclick: () => focusNode(o.id) },
+        el("span", { class: "k" }, e2.kind), el("span", null, o.title));
+    });
+    panel.replaceChildren(kids(
+      el("button", { class: "iconbtn closebtn", "aria-label": "Close card detail", onclick: closePanel }, svgIcon(ICON.x)),
+      el("div", { class: "meta-row", style: "display:flex; gap:8px; flex-wrap:wrap" },
+        badge(d.type),
+        d.status !== "active" ? el("span", { class: "chip warn" }, d.status) : null,
+        d.stale ? el("span", { class: "chip warn" }, "stale") : null),
+      el("h3", null, d.title),
+      (() => { const b = renderBody(d.body); b.style.fontSize = "13px"; return b; })(),
+      el("div", { class: "tagrow", style: "margin-top: 14px" },
+        d.project ? el("span", { class: "chip" }, d.project) : null,
+        el("span", { class: "chip mono" }, "usefulness " + Number(d.usefulness ?? 0).toFixed(1)),
+        el("span", { class: "chip mono" }, fmtDate(d.updated))),
+      (d.files || []).length ? el("div", { class: "tagrow", style: "margin-top: 8px" },
+        d.files.map(f => el("span", { class: "chip mono" }, f))) : null,
+      neighbors.length ? [el("div", { class: "sect", style: "margin-top: 20px" }, "Connected"), neighbors] : null));
+    panel.classList.add("open");
+  }
+
+  function focusNode(id) {
+    const n = byId.get(id);
+    if (!n || !G) return;
+    G.selected = n;
+    G.tx = W / 2 - n.x * G.scale; G.ty = H / 2 - n.y * G.scale;
+    openPanel(n);
+  }
+
+  $("#gq").oninput = e => { if (G) G.q = e.target.value.trim().toLowerCase(); };
+  projSel.onchange = e => { if (G) { G.fp = e.target.value; G.alpha = Math.max(G.alpha, .3); } };
+  typeSel.onchange = e => { if (G) G.ft = e.target.value; };
+}
+
+/* ================================================================ health */
+async function renderHealth() {
+  const page = $("#health-page");
+  page.replaceChildren(el("div", { class: "empty" }, el("span", { class: "spinner" })));
+  let s;
+  try { s = await api("/api/stats"); }
+  catch (e) { page.replaceChildren(emptyState(ICON.warn, "Could not load stats", e.message)); return; }
+
+  const active = s.totals.active || 0;
+  const maxN = Math.max(1, ...s.by_type.map(r => r.n));
+  const hr = s.killswitch.hit_rate;
+  const frag = document.createDocumentFragment();
+
+  if (s.inject_disabled) {
+    frag.append(el("div", { class: "banner", role: "alert" },
+      svgIcon(ICON.warn, 18),
+      el("div", null,
+        el("strong", null, "Prompt injection is switched off. "),
+        "The 30-day hit rate fell below 20%, so cards are no longer being added to prompts. Improve ranking or wait for better cards, then delete ",
+        el("code", null, "inject.disabled"), " next to the index to re-enable.")));
+  }
+
+  const tile = (n, label, sub) => el("div", { class: "tile" },
+    el("div", { class: "n" }, String(n)),
+    el("div", { class: "l" }, label),
+    sub ? el("div", { class: "sub" }, sub) : null);
+  frag.append(el("div", { class: "tiles" },
+    tile(active, "active cards", `${s.totals.superseded || 0} superseded · ${s.totals.quarantined || 0} quarantined`),
+    tile(s.pending, "awaiting review", s.pending ? "press 1 to triage" : null),
+    tile(s.killswitch.served ?? 0, "servings · 30 days"),
+    tile(hr == null ? "—" : Math.round(hr * 100) + "%", "injection hit rate", "auto-off below 20% (n≥20)")));
+
+  frag.append(el("div", { class: "panel" },
+    el("h3", null, "Cards by type"),
+    s.by_type.length ? s.by_type.map(r => el("div", { class: "bar-row" },
+      el("span", { class: "lab" }, TYPE_LABEL[r.type] || r.type),
+      el("span", { class: "bar-track" },
+        el("span", { class: "bar-fill", style: `width:${(r.n / maxN) * 100}%; --tc: var(--c-${TYPES.includes(r.type) ? r.type : "fact"})` })),
+      el("span", { class: "val" }, String(r.n))))
+    : el("p", { style: "color: var(--ink-2)" }, "No cards yet — approve your first one in Review.")));
+
+  if (s.top.length) frag.append(el("div", { class: "panel" },
+    el("h3", null, "Most useful"),
+    s.top.map(r => el("div", { class: "list-row" },
+      el("span", null, r.title),
+      el("span", { class: "u" }, "+" + Number(r.usefulness).toFixed(1))))));
+  if (s.bottom.length) frag.append(el("div", { class: "panel" },
+    el("h3", null, "Served but ignored"),
+    s.bottom.map(r => el("div", { class: "list-row" },
+      el("span", null, r.title),
+      el("span", { class: "u" }, Number(r.usefulness).toFixed(1))))));
+
+  if (CONFIG.wiki_root) frag.append(el("p", { class: "search-note mono" },
+    "wiki: " + CONFIG.wiki_root +
+    (CONFIG.auto_review ? ` · auto-review: ${CONFIG.auto_review_model || "on"}` : " · auto-review: off")));
+
+  page.replaceChildren(frag);
+}
+
+/* ================================================================ settings */
+/* The form is generated from the schema the server sends (config.EDITABLE) —
+   there is no field list here. Adding a setting is a server-side change only.
+   Model and effort choices come from each harness's own config file, so the
+   dropdown shows what THIS machine has rather than ids baked in at build time. */
+let SET = null, DRAFT = null;
+const OTHER = new Set();          // fields switched to free text
+const OTHER_VALUE = "__other__";  // sentinel: never a real model id
+
+function harnessOf(driver) {
+  const h = Object.values(SET.harnesses).find(x => x.driver === driver);
+  return h || null;
+}
+/* An empty driver means "inherit", and which harness that resolves to is the
+   server's rule (the opposite of the distiller). Offering both harnesses' ids
+   is right either way and cannot go stale. */
+function choicesFor(spec, kind) {
+  const driver = spec.of ? DRAFT[spec.of] : null;
+  const one = driver ? harnessOf(driver) : null;
+  const pick = h => (kind === "model" ? h.models : h.efforts) || [];
+  const lists = one ? [pick(one)] : Object.values(SET.harnesses).map(pick);
+  return [...new Set(lists.flat())];
+}
+
+function setField(spec) {
+  const key = spec.key, value = DRAFT[key];
+  const help = spec.help ? el("div", { class: "set-help" }, spec.help) : null;
+
+  if (spec.kind === "bool") {
+    const box = el("input", { type: "checkbox", id: "set-" + key });
+    box.checked = value === true;
+    box.onchange = () => { DRAFT[key] = box.checked; markDirty(); };
+    return el("label", { class: "set-check" + (spec.risky ? " risky" : ""), for: "set-" + key },
+      box, el("div", null, el("b", null, spec.label || key), help));
+  }
+
+  let input;
+  if (spec.kind === "driver") {
+    input = el("select", null,
+      (spec.required ? SET.drivers : ["", ...SET.drivers]).map(d => {
+        const o = el("option", { value: d }, d || "inherit (the other driver)");
+        if (d === (value || "")) o.selected = true;
+        return o;
+      }));
+    input.onchange = () => {
+      DRAFT[key] = input.value || null;
+      renderSettingsForm();  // model/effort lists follow the driver
+      markDirty();
+    };
+  } else if (spec.kind === "model" || spec.kind === "effort") {
+    /* A <select>, not an <input list>: a datalist filters its options by what is
+       already in the box, so a field holding "gpt-5.6-sol" offers exactly one
+       suggestion and reads as unselectable. "Other…" keeps free text available —
+       a model id that shipped today is not in anyone's config yet. */
+    const choices = choicesFor(spec, spec.kind);
+    const typing = OTHER.has(key);
+    const custom = value && !choices.includes(value);
+    const sel = el("select", null,
+      el("option", { value: "" }, "inherit from the harness"),
+      choices.map(c => el("option", { value: c }, c)),
+      custom && !typing ? el("option", { value: value }, value + "  (current)") : null,
+      el("option", { value: OTHER_VALUE }, "Other…"));
+    sel.value = typing ? OTHER_VALUE : (value ?? "");
+    sel.onchange = () => {
+      if (sel.value === OTHER_VALUE) { OTHER.add(key); }
+      else { OTHER.delete(key); DRAFT[key] = sel.value || null; }
+      renderSettingsForm();
+      if (OTHER.has(key)) $("#other-" + key)?.focus();
+      markDirty();
+    };
+    const free = typing ? el("input", { type: "text", id: "other-" + key, value: value ?? "",
+                                        placeholder: "type a model id", autocomplete: "off",
+                                        spellcheck: "false", style: "margin-top:8px" }) : null;
+    if (free) free.oninput = () => { DRAFT[key] = free.value.trim() || null; markDirty(); };
+    return el("label", { class: "field" }, el("span", null, spec.label || key), sel, free, help);
+  } else if (spec.kind === "int" || spec.kind === "float") {
+    input = el("input", { type: "number", value: value ?? "",
+                          min: spec.min, max: spec.max, step: spec.step });
+    input.oninput = () => { DRAFT[key] = input.value === "" ? null : Number(input.value); markDirty(); };
+  } else if (spec.kind === "time") {
+    input = el("input", { type: "time", value: value ?? "02:30" });
+    input.oninput = () => { DRAFT[key] = input.value || null; markDirty(); };
+  } else {
+    input = el("input", { type: "text", value: value ?? "", spellcheck: "false" });
+    input.oninput = () => { DRAFT[key] = input.value.trim() || null; markDirty(); };
+  }
+  return el("label", { class: "field" + (spec.risky ? " risky" : "") },
+    el("span", null, spec.label || key), input, help);
+}
+
+function changedKeys() {
+  return Object.keys(DRAFT).filter(k =>
+    String(DRAFT[k] ?? "") !== String(SET.values[k] ?? ""));
+}
+
+function markDirty() {
+  const n = changedKeys().length;
+  const btn = $("#set-save"), note = $("#set-note");
+  if (btn) btn.disabled = n === 0;
+  if (note) note.textContent = n ? `${n} unsaved change${n > 1 ? "s" : ""}` : "Saved to " + SET.config_path;
+}
+
+function harnessPanel() {
+  const rows = Object.values(SET.harnesses).map(h => el("div", { class: "panel" },
+    el("h3", null, h.harness + "  ·  driver " + h.driver),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "Config file"),
+      el("span", { class: "v mono" }, h.config_file + (h.present ? "" : "  (not found)"))),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "Its own model"),
+      el("span", { class: "v mono" }, h.model || "—")),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "Its own effort"),
+      el("span", { class: "v mono" }, h.effort || "—")),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "Models it offers"),
+      el("span", { class: "v mono" }, h.models.length ? h.models.join(", ") : "—")),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "Transcripts"),
+      el("span", { class: "v mono" }, h.sessions_dir + (h.sessions_present ? "" : "  (none yet)"))),
+    el("div", { class: "kvrow" }, el("span", { class: "k" }, "afterwit MCP server"),
+      el("span", { class: "v" }, el("span", { class: "chip " + (h.mcp_registered ? "ok" : "warn") },
+        h.mcp_registered ? "registered" : "not registered — run: afterwit install " + h.harness)))));
+  return el("div", null,
+    el("div", { class: "sect" }, "Detected harnesses"),
+    ...rows,
+    el("p", { class: "search-note" },
+      "afterwit only reads these files, to offer you the models each harness "
+      + "actually has. The one command that writes to them is `afterwit install`, "
+      + "which backs them up first."));
+}
+
+function renderSettingsForm() {
+  const page = $("#settings-page");
+  const frag = document.createDocumentFragment();
+  const sections = [];
+  for (const spec of SET.schema) {
+    const last = sections[sections.length - 1];
+    if (!last || last.name !== spec.section) sections.push({ name: spec.section, items: [spec] });
+    else last.items.push(spec);
+  }
+  for (const s of sections) {
+    frag.append(el("div", { class: "panel" }, el("h3", null, s.name),
+      el("div", { class: "set-fields" }, s.items.map(setField))));
+  }
+  frag.append(harnessPanel());
+  // The bar is LAST in the DOM on purpose: `sticky bottom: 0` cannot travel past
+  // its own place in the flow, so a bar in the middle floats over what follows it.
+  frag.append(el("div", { class: "savebar" },
+    el("button", { class: "btn primary", id: "set-save", onclick: () => saveSettings() }, "Save changes"),
+    el("button", { class: "btn", onclick: () => { DRAFT = { ...SET.values }; OTHER.clear(); renderSettingsForm(); } }, "Revert"),
+    el("span", { class: "note", id: "set-note" })));
+  page.replaceChildren(frag);
+  markDirty();
+}
+
+async function renderSettings() {
+  const page = $("#settings-page");
+  page.replaceChildren(el("div", { class: "empty" }, el("span", { class: "spinner" })));
+  try { SET = await api("/api/settings"); }
+  catch (e) { page.replaceChildren(emptyState(ICON.warn, "Could not load settings", e.message)); return; }
+  DRAFT = { ...SET.values };
+  OTHER.clear();
+  renderSettingsForm();
+}
+
+async function saveSettings() {
+  const keys = changedKeys();
+  if (!keys.length) return;
+  const body = Object.fromEntries(keys.map(k => [k, DRAFT[k] ?? ""]));
+  $("#set-save").disabled = true;
+  try {
+    SET = await api("/api/settings", postJSON(body));
+  } catch (e) {
+    toast(e.message, "error");
+    markDirty();
+    return;
+  }
+  DRAFT = { ...SET.values };          // show what the values BECAME, not what was typed
+  renderSettingsForm();
+  await loadConfig();                  // auto-review may have just turned on/off
+  updateCounts();
+  toast(SET.note ? "Saved. " + SET.note
+    : keys.some(k => k === "wiki_root" || k === "db_path")
+    ? "Saved. Paths changed — run: afterwit index --rebuild"
+    : "Settings saved.");
+}
+
+/* ================================================================ boot */
+(async () => {
+  await loadConfig();
+  await loadQueue();
+  const initial = location.hash.slice(1);
+  show(SURFACES.includes(initial) ? initial : "review");
+})();
+</script>
+</body>
+</html>
