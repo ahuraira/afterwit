@@ -72,6 +72,7 @@ ORDER BY table_schema, table_name, ordinal_position
     result = subprocess.run(
         [psql, safe_url, "-X", "-At", "-F", "\t", "-c", query],
         capture_output=True, text=True, timeout=60, env=env,
+        stdin=subprocess.DEVNULL,
     )
     if result.returncode:
         raise RuntimeError(f"database {project}: psql failed: {result.stderr[:200]}")

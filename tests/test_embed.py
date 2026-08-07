@@ -1,6 +1,8 @@
 import argparse
 import builtins
 import sys
+import threading
+import time
 import types
 from array import array
 
@@ -186,3 +188,66 @@ def test_changing_the_model_re_embeds_every_card(tmp_path, monkeypatch):
     embed.reindex(conn)
     assert len(FakeTextEmbedding.calls) == 2          # different model -> re-embedded
     assert FakeTextEmbedding.calls[-1] == FakeTextEmbedding.calls[0]
+
+
+def _reset_model(monkeypatch):
+    """Undo the process-wide model cache so each test loads its own."""
+    monkeypatch.setattr(embed, "_model_started", False)
+    monkeypatch.setattr(embed, "_model_obj", None)
+    monkeypatch.setattr(embed, "_model_ready", threading.Event())
+
+
+def test_a_slow_model_load_costs_the_budget_not_the_load(tmp_path, monkeypatch):
+    """Loading the model must never be able to hang a query.
+
+    `from fastembed import TextEmbedding` drags in onnxruntime and numpy —
+    hundreds of MB of native extensions. With site-packages on a cloud-synced
+    folder (OneDrive Files-On-Demand marks every .pyd a placeholder) the first
+    load blocks on file hydration: measured >50s here, unbounded in principle.
+
+    It used to run inline in `cosines`, guarded by `except Exception` — which
+    catches nothing, because a slow import does not raise, it just never
+    returns. The MCP client had no response and no error until its own 1800s
+    idle timeout fired, three calls in a row.
+    """
+    _reset_model(monkeypatch)
+    started, release = threading.Event(), threading.Event()
+
+    def never_finishes():
+        started.set()
+        release.wait(30)          # never sets _model_ready
+
+    monkeypatch.setattr(embed, "_load_model", never_finishes)
+    t0 = time.monotonic()
+    try:
+        assert embed.model(budget=0.2) is None      # degrade, do not block
+        assert time.monotonic() - t0 < 5.0
+        assert started.wait(5)                      # and it really did start
+    finally:
+        release.set()
+
+
+def test_cosines_ranks_lexically_while_the_model_is_still_loading(tmp_path, monkeypatch):
+    """A not-yet-ready model means "rank without vectors", never "no results"."""
+    _reset_model(monkeypatch)
+    conn = build_db(tmp_path, [make_card()])
+    embed.ensure_schema(conn)
+    conn.execute("INSERT INTO vectors(id, body_hash, vec) VALUES(?,?,?)",
+                 ("c1", "h1", array("f", [1.0, 0.0, 0.0]).tobytes()))
+    conn.commit()
+    monkeypatch.setattr(embed, "model", lambda budget=0.0: None)
+    assert embed.cosines(conn, "query", ["c1"]) is None
+
+
+def test_the_model_is_loaded_once_not_once_per_query(tmp_path, monkeypatch):
+    """`cosines` built a fresh TextEmbedding on every call — and each build
+    probes the model cache over the network before handing back the same
+    object (~0.8s warm; behind a proxy that 403s, two dead HTTP round-trips)."""
+    _reset_model(monkeypatch)
+    loads = []
+    monkeypatch.setattr(embed, "_load_model", lambda: (
+        loads.append(1), embed._model_ready.set()) and None)
+
+    for _ in range(5):
+        embed.model(budget=5.0)
+    assert len(loads) == 1

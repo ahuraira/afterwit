@@ -127,7 +127,7 @@ def _remote_visibility(url: str) -> str:
         return "unknown"
     try:
         r = subprocess.run(["gh", "repo", "view", m.group(1), "--json", "isPrivate",
-                            "-q", ".isPrivate"], capture_output=True, text=True, timeout=10)
+                            "-q", ".isPrivate"], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError):
         return "unknown"
     out = r.stdout.strip().lower()
@@ -155,7 +155,7 @@ def _cmd_sync(args) -> int:
 
     def git(*a: str):
         return subprocess.run(["git", "-C", str(cfg.wiki_root), *a],
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
     if cfg.db_path.exists():
         conn = index_db.connect(cfg.db_path)
@@ -602,7 +602,7 @@ def _cmd_doctor(args) -> int:
     # and every outage so far lived in the gap between them.
     argv = install._server_argv("recall", repo) + ["afterwit doctor smoke test", "-k", "1"]
     try:
-        r = subprocess.run(argv, capture_output=True, text=True, timeout=180)
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=180, stdin=subprocess.DEVNULL)
         err = r.stderr.strip().splitlines()[-1][:160] if r.stderr.strip() else f"exit {r.returncode}"
         chk(r.returncode == 0, "cli reachable (what agents shell out to)",
             install._join(argv) if r.returncode == 0 else err,
@@ -675,7 +675,7 @@ def _cmd_init(args) -> int:
     if not gi.exists():  # derived files must never be synced (ADR-019)
         gi.write_text("index.md\nprojects/*/brief.md\nlog.md\n", encoding="utf-8")
     if not (wiki / ".git").exists():
-        subprocess.run(["git", "init", "-q", str(wiki)], check=False)
+        subprocess.run(["git", "init", "-q", str(wiki)], check=False, stdin=subprocess.DEVNULL)
 
     if not cfg_path.exists():
         cfg_path.parent.mkdir(parents=True, exist_ok=True)
@@ -692,7 +692,7 @@ def _cmd_init(args) -> int:
         print(f"wrote {cfg_path}")
 
     has_remote = bool(subprocess.run(["git", "-C", str(wiki), "remote"],
-                                     capture_output=True, text=True).stdout.strip())
+                                     capture_output=True, text=True, stdin=subprocess.DEVNULL).stdout.strip())
     if not has_remote and shutil.which("gh"):
         name = args.repo or "afterwit-knowledge"
         # DEVICE TWO. The wiki repo usually already exists — this is the second
@@ -702,26 +702,26 @@ def _cmd_init(args) -> int:
         # card sat on GitHub. Adopt before create.
         view = subprocess.run(["gh", "repo", "view", name, "--json", "url,isPrivate",
                                "-q", ".url + \" \" + (.isPrivate|tostring)"],
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, stdin=subprocess.DEVNULL)
         remote_url, _, is_private = view.stdout.strip().partition(" ")
         # Only into a wiki with no history of its own: `checkout -f` discards local
         # edits, and a wiki with commits is one this device has already written to.
         virgin = subprocess.run(["git", "-C", str(wiki), "rev-parse", "--verify", "HEAD"],
-                                capture_output=True, text=True).returncode != 0
+                                capture_output=True, text=True, stdin=subprocess.DEVNULL).returncode != 0
         if view.returncode == 0 and remote_url and virgin:
             if is_private != "true":
                 print(f"WARNING: {name} is PUBLIC. Your wiki is distilled from your own\n"
                       "         sessions — make it private before the first sync.",
                       file=sys.stderr)
             subprocess.run(["git", "-C", str(wiki), "remote", "add", "origin", remote_url],
-                           check=False, capture_output=True)
-            subprocess.run(["git", "-C", str(wiki), "fetch", "-q", "origin"], check=False)
+                           check=False, capture_output=True, stdin=subprocess.DEVNULL)
+            subprocess.run(["git", "-C", str(wiki), "fetch", "-q", "origin"], check=False, stdin=subprocess.DEVNULL)
             head = subprocess.run(["git", "-C", str(wiki), "symbolic-ref",
                                    "--short", "refs/remotes/origin/HEAD"],
-                                  capture_output=True, text=True).stdout.strip()
+                                  capture_output=True, text=True, stdin=subprocess.DEVNULL).stdout.strip()
             branch = head.split("/")[-1] if head else "main"
             r = subprocess.run(["git", "-C", str(wiki), "checkout", "-f", "-B", branch,
-                                f"origin/{branch}"], capture_output=True, text=True)
+                                f"origin/{branch}"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
             print(f"adopted existing wiki {name} ({branch})" if not r.returncode
                   else f"git: {r.stderr.strip()}")
         elif view.returncode != 0 and ask(
@@ -729,7 +729,7 @@ def _cmd_init(args) -> int:
             # --private is not optional: this wiki holds your mined session history.
             r = subprocess.run(["gh", "repo", "create", name, "--private",
                                 "--source", str(wiki), "--remote", "origin"],
-                               capture_output=True, text=True)
+                               capture_output=True, text=True, stdin=subprocess.DEVNULL)
             print(f"created private repo {name}" if not r.returncode
                   else f"gh: {r.stderr.strip()}")
 
@@ -751,7 +751,7 @@ def _cmd_init(args) -> int:
         if shutil.which("uv"):
             print("\ninstalling the `aw` command on PATH...")
             r = subprocess.run(["uv", "tool", "install", "--editable", str(install._repo_root())],
-                               capture_output=True, text=True)
+                               capture_output=True, text=True, stdin=subprocess.DEVNULL)
             print("  aw: ok" if not r.returncode
                   else f"  aw: skipped ({r.stderr.strip().splitlines()[-1][:110] if r.stderr.strip() else r.returncode})")
         else:

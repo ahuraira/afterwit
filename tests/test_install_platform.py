@@ -338,3 +338,38 @@ def test_cron_scheduled_detects_each_mode(tmp_path):
     assert install.cron_scheduled(mode="cron", crontab_get=lambda: "") is False
     assert install.cron_scheduled(
         mode="cron", crontab_get=lambda: "# afterwit:begin\nx\n# afterwit:end") is True
+
+
+def test_every_subprocess_call_closes_stdin():
+    """No afterwit subprocess may inherit its parent's stdin.
+
+    afterwit runs inside harnesses that hand it a PIPE on stdin: the MCP server
+    speaks JSON-RPC over it, hooks receive their payload on it, and an agent
+    shelling out to `aw` gets one too. A child that inherits that pipe leaves
+    `communicate()` waiting for an EOF that only arrives when the *harness*
+    exits, so the reader threads park and the call burns its whole timeout.
+
+    On Windows `timeout=` is no defence: after TimeoutExpired, CPython's
+    `run()` calls `process.communicate()` a second time with NO timeout to
+    collect the output (subprocess.py, `if _mswindows:`). That second wait is
+    unbounded — which is how one `git rev-parse` behind a 10s timeout became
+    30 minutes of MCP silence with no error and no response (ADR gotcha #86).
+
+    `input=` is exempt: it implies stdin=PIPE, and passing both raises.
+    """
+    import ast
+
+    offenders = []
+    for path in sorted(Path(install.__file__).parent.rglob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            if getattr(getattr(fn, "value", None), "id", None) != "subprocess":
+                continue
+            if getattr(fn, "attr", None) not in {"run", "Popen", "check_output", "call"}:
+                continue
+            kwargs = {k.arg for k in node.keywords}
+            if not kwargs & {"stdin", "input"}:
+                offenders.append(f"{path.name}:{node.lineno}")
+    assert not offenders, f"subprocess call inherits the harness pipe: {offenders}"

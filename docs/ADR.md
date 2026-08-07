@@ -1666,6 +1666,42 @@ worktree venv. Fix: `mcp>=1.28.1,<2` in pyproject AND a committed uv.lock in the
 tree; lift the ceiling only together with an mcp-2 port of `mcp_server.py`. The general
 rule: a fresh-resolve test run is part of publishing — the dev venv proves nothing about
 a clone.
+### 86. A child that inherits the harness's stdin never sees EOF `subprocess` `mcp` `windows`
+`subprocess.run(capture_output=True)` pipes stdout/stderr and leaves **stdin inherited**.
+Inside the MCP server that stdin is the JSON-RPC pipe from the harness, so the child holds
+a handle to it and `communicate()`'s reader threads wait for an EOF that cannot arrive
+until the *harness* exits. Measured: `git rev-parse HEAD` returns in 0.1s from a plain
+process and burns the full 10s timeout from inside the server — `save_insight` anchors
+with two git calls, so every call cost 20.1s. And `timeout=` is not a bound on Windows:
+after `TimeoutExpired`, CPython's `run()` calls `process.communicate()` a *second* time
+with no timeout to collect the output (`subprocess.py`, `if _mswindows:`), which is how a
+10s budget becomes 30 minutes of silence with no error and no response. Fix is one
+keyword — `stdin=subprocess.DEVNULL` — at every call site, guarded by an AST test over
+`src/` so a new call site cannot reintroduce it. `input=` is exempt: it implies
+stdin=PIPE, and passing both raises.
+
+### 87. `except Exception` does not catch a slow import `embed` `mcp` `latency`
+`cosines()` did `from fastembed import TextEmbedding` inline, wrapped in
+`except Exception` "because embeddings are optional". A failed import raises and is
+caught; a *slow* one raises nothing and simply never returns. With site-packages on a
+cloud-synced folder — OneDrive Files-On-Demand leaves all 339 native libs in this venv as
+placeholders — the first load blocks hydrating numpy's `.pyd`, measured >50s, unbounded in
+principle. `recall`, `lookup_error` and `for_file` embed; `project_brief`, `save_insight`
+and `feedback` do not, which is why the harness looked like it had a working read path and
+a broken write path when in fact it had neither. Degradation has to be *timed*, not merely
+attempted: the model now loads once on a daemon thread and a query waits `_LOAD_BUDGET`,
+not the load. Bonus, the old code rebuilt `TextEmbedding` per query — each rebuild probes
+the model cache over the network before handing back the same object.
+
+### 88. A golden test that scores against wall-clock has a shelf life `rank` `tests`
+The suite passed on 2026-07-28 and nine tests failed on 2026-08-07 with no commit in
+between. `rank` weights recency as `0.1 · exp(-age_days/90)` against a fixture card dated
+2026-07-05, so ten days of calendar drift removed 0.008 from the score. The card scored
+0.347 against `DEFAULT_FLOOR = 0.35`: the suite had been passing by 0.003. Test fixtures
+must either freeze `rank`'s clock or date themselves relative to now — a test that only
+passes near the date it was written is not a regression test. The real question underneath
+is a §12 one and is NOT settled here: a live card sitting near the floor also goes quietly
+un-served as it ages, and the floor is still marked provisional pending `afterwit eval`.
 
 ## ADR-041: A resolved insight outranks its own provenance
 

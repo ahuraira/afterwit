@@ -493,7 +493,7 @@ def _run_execstart(repo: Path, budget: int, timeout: int) -> str:
 
 
 def _default_run(argv: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(argv, capture_output=True, text=True)
+    return subprocess.run(argv, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
 
 def _systemctl_activate() -> str:
@@ -501,9 +501,9 @@ def _systemctl_activate() -> str:
     session cannot enable --user units; report instead of crashing the install."""
     try:
         subprocess.run(["systemctl", "--user", "daemon-reload"], check=True,
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, stdin=subprocess.DEVNULL)
         subprocess.run(["systemctl", "--user", "enable", "--now", f"{CRON_UNIT}.timer"],
-                       check=True, capture_output=True, text=True)
+                       check=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
         return "enabled"
     except Exception as e:  # noqa: BLE001
         return (f"units written but not enabled ({e}); run manually: "
@@ -607,7 +607,7 @@ def cron_scheduled(*, mode: str | None = None, home: Path | None = None,
 
 
 def _crontab_get() -> str:
-    r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    r = subprocess.run(["crontab", "-l"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
     return r.stdout if r.returncode == 0 else ""
 
 

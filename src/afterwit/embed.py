@@ -11,10 +11,21 @@ from __future__ import annotations
 import hashlib
 import math
 import sqlite3
+import threading
 from array import array
 from collections.abc import Iterable
+from typing import Any
 
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+
+# How long a query may wait for the embedding model before giving up on vectors
+# and ranking lexically. Loading it means importing fastembed -> onnxruntime ->
+# numpy, i.e. hundreds of MB of native extensions; if site-packages sits on a
+# cloud-synced folder (OneDrive Files-On-Demand) every .pyd is a placeholder and
+# the *first* load blocks on hydration. Measured at >50s on a corporate laptop,
+# and `except Exception` is no defence — a slow import raises nothing, it just
+# never returns, so the MCP client sat silent until its own idle timeout.
+_LOAD_BUDGET = 5.0
 
 DDL = """
 CREATE TABLE IF NOT EXISTS vectors(
@@ -113,6 +124,51 @@ def _vectors_table_exists(conn: sqlite3.Connection) -> bool:
     ).fetchone() is not None
 
 
+_model_obj: Any = None
+_model_ready = threading.Event()
+_model_started = False
+_model_lock = threading.Lock()
+
+
+def _load_model() -> None:
+    global _model_obj
+    try:
+        from fastembed import TextEmbedding
+
+        _model_obj = TextEmbedding(model_name=MODEL_NAME)
+    except Exception:  # noqa: BLE001 — embeddings are an optional ranking boost
+        _model_obj = None
+    finally:
+        _model_ready.set()
+
+
+def model(budget: float = _LOAD_BUDGET) -> Any:
+    """The embedding model, or None if it is not ready within `budget` seconds.
+
+    Loaded ONCE, on a daemon thread, and never on the caller's. Two properties
+    matter and neither is free:
+
+    - A caller waits `budget`, not the load. A stuck load leaves the thread
+      parked forever; the query returns and ranks lexically. `daemon=True` so a
+      parked loader can never keep the process from exiting.
+    - The load is attempted once per process. It used to be re-run per query —
+      a fresh `TextEmbedding` per `recall`, each one paying a model-cache probe
+      over the network (~0.8s warm, and on a proxy that 403s, two failed HTTP
+      round-trips) before returning the same object.
+
+    A load that fails is remembered as failed: retrying it every query is how a
+    broken install turns into a slow one.
+    """
+    global _model_started
+    with _model_lock:
+        if not _model_started:
+            _model_started = True
+            threading.Thread(target=_load_model, name="afterwit-embed-load",
+                             daemon=True).start()
+    _model_ready.wait(budget)
+    return _model_obj
+
+
 def _cos(a: array, b: array) -> float:
     n = min(len(a), len(b))
     if n == 0:
@@ -146,16 +202,15 @@ def cosines(
     if not rows:
         return {}
 
-    try:
-        from fastembed import TextEmbedding
-    except ImportError:
-        return None
-
-    try:
-        model = TextEmbedding(model_name=MODEL_NAME)
-        query_vec = _vec(_blob(next(iter(model.embed([query_text])))))
-    except Exception:  # noqa: BLE001 — embeddings are an optional ranking boost
+    m = model()
+    if m is None:
         # Pull retrieval remains available lexically when a fresh device has not
-        # downloaded the optional local model or the cache is unavailable.
+        # downloaded the optional local model, the cache is unavailable, or the
+        # model is still loading. None means "rank without vectors", never "no
+        # results" — the caller must not treat this as an empty index.
+        return None
+    try:
+        query_vec = _vec(_blob(next(iter(m.embed([query_text])))))
+    except Exception:  # noqa: BLE001 — embeddings are an optional ranking boost
         return None
     return {r["id"]: _cos(query_vec, _vec(r["vec"])) for r in rows}

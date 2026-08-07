@@ -27,6 +27,7 @@ def _git(repo: Path, *args: str) -> str | None:
         r = subprocess.run(
             ["git", "-C", str(repo), *args],
             capture_output=True, text=True, timeout=_TIMEOUT,
+            stdin=subprocess.DEVNULL,
         )
     except (OSError, subprocess.SubprocessError):
         return None
